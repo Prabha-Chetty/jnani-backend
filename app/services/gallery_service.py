@@ -18,37 +18,45 @@ def create_album(db: Database, album: AlbumCreate) -> str:
 
 def get_all_albums(db: Database) -> List[Album]:
     """Get all albums with image count and first image"""
-    pipeline = [
-        {
-            "$lookup": {
-                "from": "images",
-                "localField": "_id",
-                "foreignField": "album_id",
-                "as": "images"
-            }
-        },
-        {
-            "$addFields": {
-                "id": { "$toString": "$_id" },
-                "image_count": { "$size": "$images" },
-                "first_image": { "$arrayElemAt": ["$images", 0] }
-            }
-        }
-    ]
+    if db is None:
+        print("Database connection is None")
+        return []
     
-    albums_cursor = db.albums.aggregate(pipeline)
-    
-    albums_list = []
-    for album_doc in albums_cursor:
-        # The first image is already in the document, we just need to format it
-        if album_doc.get("first_image"):
-             album_doc["images"] = [album_doc["first_image"]]
-        else:
-             album_doc["images"] = []
+    try:
+        pipeline = [
+            {
+                "$lookup": {
+                    "from": "images",
+                    "localField": "_id",
+                    "foreignField": "album_id",
+                    "as": "images"
+                }
+            },
+            {
+                "$addFields": {
+                    "id": { "$toString": "$_id" },
+                    "image_count": { "$size": "$images" },
+                    "first_image": { "$arrayElemAt": ["$images", 0] }
+                }
+            }
+        ]
         
-        albums_list.append(Album(**album_doc))
-    # print("Albums cursor:", albums_list)
-    return albums_list
+        albums_cursor = db.albums.aggregate(pipeline)
+        
+        albums_list = []
+        for album_doc in albums_cursor:
+            # The first image is already in the document, we just need to format it
+            if album_doc.get("first_image"):
+                 album_doc["images"] = [album_doc["first_image"]]
+            else:
+                 album_doc["images"] = []
+            
+            albums_list.append(Album(**album_doc))
+        # print("Albums cursor:", albums_list)
+        return albums_list
+    except Exception as e:
+        print(f"Error in get_all_albums: {e}")
+        return []
 
 def get_album_by_id(db: Database, album_id: str) -> Optional[AlbumWithImages]:
     """Get album by ID with all images"""
