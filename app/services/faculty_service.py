@@ -4,9 +4,16 @@ from bson import ObjectId
 from fastapi import UploadFile
 import shutil
 import os
+import uuid
 from typing import Optional
+from datetime import datetime
 
 MEDIA_DIR = "media"
+FACULTY_IMAGES_DIR = os.path.join(MEDIA_DIR, "faculty")
+
+# Ensure media directories exist
+os.makedirs(MEDIA_DIR, exist_ok=True)
+os.makedirs(FACULTY_IMAGES_DIR, exist_ok=True)
 
 def save_upload_file(upload_file: UploadFile, destination: str) -> str:
     try:
@@ -16,25 +23,37 @@ def save_upload_file(upload_file: UploadFile, destination: str) -> str:
         upload_file.file.close()
     return destination
 
+def generate_unique_filename(original_filename: str) -> str:
+    """Generate a unique filename to prevent conflicts"""
+    # Get file extension
+    file_extension = os.path.splitext(original_filename)[1]
+    # Generate unique name with timestamp
+    unique_name = f"{uuid.uuid4()}_{int(datetime.utcnow().timestamp())}{file_extension}"
+    return unique_name
+
 def get_all_faculties(db: Database):
     faculties = list(db.faculties.find())
     for faculty in faculties:
         faculty["id"] = str(faculty["_id"])
+        # Remove hardcoded localhost URL - let the frontend handle the base URL
         if faculty.get("profile_image_url"):
-             # The URL is already stored with the /media path, so just prepend the base
-             faculty["profile_image_url"] = f"http://localhost:8000{faculty['profile_image_url']}"
+            # Keep the relative path as is
+            pass
     return faculties
 
 def create_new_faculty(db: Database, faculty: FacultyCreate, profile_image: Optional[UploadFile] = None):
     faculty_dict = faculty.dict()
     
     if profile_image:
-        # Ensure filename is secure
-        filename = profile_image.filename
-        file_location = os.path.join(MEDIA_DIR, filename)
+        # Generate unique filename
+        unique_filename = generate_unique_filename(profile_image.filename)
+        file_location = os.path.join(FACULTY_IMAGES_DIR, unique_filename)
+        
+        # Save the file
         save_upload_file(profile_image, file_location)
-        # Store a web-accessible path, not a file system path
-        faculty_dict["profile_image_url"] = f"/media/{filename}"
+        
+        # Store the relative path for web access
+        faculty_dict["profile_image_url"] = f"/media/faculty/{unique_filename}"
 
     result = db.faculties.insert_one(faculty_dict)
     return str(result.inserted_id)
@@ -43,7 +62,7 @@ def update_faculty_by_id(db: Database, faculty_id: str, faculty: FacultyCreate, 
     faculty_dict = faculty.dict(exclude_unset=True)
 
     if profile_image:
-        # Optionally, delete the old image before saving the new one
+        # Delete the old image before saving the new one
         old_faculty = db.faculties.find_one({"_id": ObjectId(faculty_id)})
         if old_faculty and old_faculty.get("profile_image_url"):
             # Construct file system path from web path
@@ -51,10 +70,13 @@ def update_faculty_by_id(db: Database, faculty_id: str, faculty: FacultyCreate, 
             if os.path.exists(old_image_path):
                 os.remove(old_image_path)
 
-        filename = profile_image.filename
-        file_location = os.path.join(MEDIA_DIR, filename)
+        # Generate unique filename for new image
+        unique_filename = generate_unique_filename(profile_image.filename)
+        file_location = os.path.join(FACULTY_IMAGES_DIR, unique_filename)
+        
+        # Save the new file
         save_upload_file(profile_image, file_location)
-        faculty_dict["profile_image_url"] = f"/media/{filename}"
+        faculty_dict["profile_image_url"] = f"/media/faculty/{unique_filename}"
     
     result = db.faculties.update_one(
         {"_id": ObjectId(faculty_id)}, {"$set": faculty_dict}
