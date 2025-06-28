@@ -11,3 +11,5 @@ env.bak/
 venv.bak/
 .venv/
 .env
+.DS_Store
+*.pyc
