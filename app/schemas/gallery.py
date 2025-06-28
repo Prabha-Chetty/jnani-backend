@@ -45,7 +45,7 @@ class AlbumImage(BaseModel):
     @model_validator(mode='after')
     def build_full_url(self):
         if self.file_path and not self.file_path.startswith('http'):
-            self.file_path = f"http://localhost:8000/{self.file_path}"
+            self.file_path = f"https://jnani-backend.onrender.com/{self.file_path}"
         return self
 
     class Config:
