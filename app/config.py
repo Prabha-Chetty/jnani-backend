@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Settings(BaseSettings):
-    MONGODB_URL: str = os.getenv("MONGODB_URL", "mongodb://localhost:27017/")
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "your-super-secret-key-change-this-in-production")
+    MONGODB_URL: str = os.getenv("DATABASE_URL", "mongodb+srv://jnani-user:OhPQCKf15Q72ljwU@cluster0.imfj5bv.mongodb.net/")
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "jstsec2025jun")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
