@@ -5,6 +5,7 @@ from fastapi import UploadFile
 import shutil
 import os
 from typing import Optional
+from app.config import settings
 
 MEDIA_DIR = "media"
 
@@ -21,9 +22,9 @@ def get_all_events(db: Database):
     for event in events:
         event["id"] = str(event["_id"])
         if event.get("image_url"):
-            event["image_url"] = f"http://localhost:8000{event['image_url']}"
+            event["image_url"] = f"{settings.MEDIA_URL}{event['image_url']}"
         if event.get("video_url"):
-            event["video_url"] = f"http://localhost:8000{event['video_url']}"
+            event["video_url"] = f"{settings.MEDIA_URL}{event['video_url']}"
     return events
 
 def create_new_event(db: Database, event: EventCreate, image: Optional[UploadFile] = None, video: Optional[UploadFile] = None):

@@ -5,6 +5,7 @@ from fastapi import UploadFile
 import shutil
 import os
 from typing import Optional
+from app.config import settings
 
 MEDIA_DIR = "media"
 
@@ -23,7 +24,7 @@ def get_all_library_items(db: Database):
         item["id"] = str(item["_id"])
         del item["_id"]
         if item.get("file_url"):
-            item["file_url"] = f"http://localhost:8000{item['file_url']}"
+            item["file_url"] = f"{settings.MEDIA_URL}{item['file_url']}"
     print("Processed items:", items)
     return items
 

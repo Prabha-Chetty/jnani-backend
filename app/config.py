@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = os.getenv("SECRET_KEY", "jstsec2025jun")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    MEDIA_URL: str = os.getenv("MEDIA_URL", "http://localhost:8000")
 
     class Config:
         env_file = ".env"

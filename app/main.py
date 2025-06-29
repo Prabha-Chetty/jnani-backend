@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.routes import auth, students, courses, faculty, users, roles, permissions, events, library, classes, gallery
 from app.routes import content as content_routes
+from app.routes import contact_enquiry as contact_enquiry_routes
 from app.db.database import get_database
 from app.services.user_service import create_default_admin
 import os
@@ -52,12 +53,14 @@ app.include_router(library.router, prefix="/library", tags=["Library"])
 app.include_router(classes.router, prefix="/classes", tags=["Classes"])
 app.include_router(gallery.router, prefix="/gallery", tags=["Gallery"])
 app.include_router(content_routes.public_router, prefix="/content", tags=["Content"])
+app.include_router(contact_enquiry_routes.public_router, prefix="/contact-enquiries", tags=["Contact Enquiries"])
 
 # Admin-only routes
 app.include_router(content_routes.admin_router, prefix="/admin/content", tags=["Content Management"])
 app.include_router(faculty.router, prefix="/admin/faculties", tags=["Faculties"])
 app.include_router(users.router, prefix="/admin/users", tags=["Users"])
 app.include_router(roles.router, prefix="/admin/roles", tags=["Roles"])
+app.include_router(contact_enquiry_routes.admin_router, prefix="/admin/contact-enquiries", tags=["Contact Enquiries Management"])
 
 @app.get("/")
 async def root():
