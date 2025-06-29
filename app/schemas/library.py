@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, model_validator
 from typing import Optional
 from datetime import datetime
+from app.config import settings
 
 class LibraryItemBase(BaseModel):
     title: str = Field(..., max_length=200)
@@ -13,7 +14,7 @@ class LibraryItem(LibraryItemBase):
     @model_validator(mode='after')
     def build_full_url(self):
         if self.file_url and not self.file_url.startswith('http'):
-            self.file_url = f"http://localhost:8000{self.file_url}"
+            self.file_url = f"{settings.MEDIA_URL}{self.file_url}"
         return self
 
     class Config:

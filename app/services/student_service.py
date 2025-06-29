@@ -5,6 +5,7 @@ from fastapi import UploadFile
 import shutil
 import os
 from typing import Optional
+from app.config import settings
 
 MEDIA_DIR = "media"
 
@@ -21,7 +22,7 @@ def get_all_students(db: Database):
     for student in students:
         student["id"] = str(student["_id"])
         if student.get("profile_image_url"):
-            student["profile_image_url"] = f"http://localhost:8000{student['profile_image_url']}"
+            student["profile_image_url"] = f"{settings.MEDIA_URL}{student['profile_image_url']}"
     return students
 
 def create_new_student(db: Database, student: StudentCreate, profile_image: Optional[UploadFile] = None):

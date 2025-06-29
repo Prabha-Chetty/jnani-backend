@@ -7,6 +7,7 @@ import os
 import uuid
 from typing import Optional
 from datetime import datetime
+from app.config import settings
 
 MEDIA_DIR = "media"
 FACULTY_IMAGES_DIR = os.path.join(MEDIA_DIR, "faculty")
@@ -38,7 +39,8 @@ def get_all_faculties(db: Database):
         # Remove hardcoded localhost URL - let the frontend handle the base URL
         if faculty.get("profile_image_url"):
             # Keep the relative path as is
-            pass
+            faculty["profile_image_url"] = f"{settings.MEDIA_URL}{faculty['profile_image_url']}"
+            
     return faculties
 
 def create_new_faculty(db: Database, faculty: FacultyCreate, profile_image: Optional[UploadFile] = None):
