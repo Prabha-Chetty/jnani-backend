@@ -28,17 +28,18 @@ if not os.path.exists("media"):
 app.mount("/media", StaticFiles(directory="media"), name="media")
 
 # CORS middleware
+# Starlette's allow_origins does exact-string match — it does NOT honour
+# wildcards mid-string. Subdomain wildcards must go through allow_origin_regex.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000", 
-        "http://localhost:3002", 
-        "http://127.0.0.1:3000", 
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
         "http://127.0.0.1:3002",
         "https://jnanistudycentre.vercel.app",
         "https://jnani-frontend.vercel.app",
-        "https://*.vercel.app"
     ],
+    allow_origin_regex=r"https://([a-z0-9-]+\.)*vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
