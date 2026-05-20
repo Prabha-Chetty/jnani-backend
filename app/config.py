@@ -10,8 +10,10 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     MEDIA_URL: str = os.getenv("MEDIA_URL", "http://localhost:8000")
+    CLOUDINARY_URL: str = os.getenv("CLOUDINARY_URL", "")
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 settings = Settings() 

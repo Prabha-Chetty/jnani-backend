@@ -9,3 +9,4 @@ pydantic[email]
 pydantic-settings
 email-validator
 PyJWT
+cloudinary
