@@ -1,11 +1,10 @@
 import os
-import shutil
 from datetime import datetime
 from typing import List, Optional
 from pymongo.database import Database
 from bson import ObjectId
 from app.schemas.gallery import AlbumCreate, AlbumUpdate, ImageCreate, Album, AlbumWithImages
-import uuid
+from app.services import cloudinary_service
 
 def create_album(db: Database, album: AlbumCreate) -> str:
     """Create a new album"""
@@ -88,61 +87,41 @@ def update_album(db: Database, album_id: str, album: AlbumUpdate) -> bool:
     return result.modified_count > 0
 
 def delete_album(db: Database, album_id: str) -> bool:
-    """Delete album and all its images from storage"""
-    # Get all images in the album
+    """Delete album and all its images from storage."""
     images = list(db.images.find({"album_id": album_id}))
-    
-    # Delete image files from storage
+
     for image in images:
-        try:
-            if os.path.exists(image["file_path"]):
-                os.remove(image["file_path"])
-        except Exception as e:
-            print(f"Error deleting file {image['file_path']}: {e}")
-    
-    # Delete all images from database
+        public_id = image.get("public_id")
+        if public_id:
+            cloudinary_service.delete_by_public_id(public_id)
+
     db.images.delete_many({"album_id": album_id})
-    
-    # Delete album from database
     result = db.albums.delete_one({"_id": ObjectId(album_id)})
     return result.deleted_count > 0
 
+
 def upload_image_to_album(db: Database, album_id: str, file, alt_text: Optional[str] = None) -> str:
-    """Upload an image to an album"""
-    # Check if album exists
+    """Upload an image to an album via Cloudinary."""
     album = db.albums.find_one({"_id": ObjectId(album_id)})
     if not album:
         raise ValueError("Album not found")
-    
-    # Create unique filename
-    file_extension = os.path.splitext(file.filename)[1]
-    unique_filename = f"{uuid.uuid4()}{file_extension}"
-    
-    # Create album directory if it doesn't exist
-    album_dir = os.path.join("media", "gallery", album_id)
-    os.makedirs(album_dir, exist_ok=True)
-    
-    # Save file
-    file_path = os.path.join(album_dir, unique_filename)
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    # Get file size
-    file_size = os.path.getsize(file_path)
-    
-    # Create image record
+
+    uploaded = cloudinary_service.upload_file(file, folder=f"gallery/{album_id}")
+
     image_data = {
         "album_id": album_id,
-        "filename": unique_filename,
+        "filename": uploaded["public_id"].split("/")[-1],
         "original_filename": file.filename,
-        "file_path": file_path,
-        "file_size": file_size,
+        "file_path": uploaded["url"],
+        "url": uploaded["url"],
+        "public_id": uploaded["public_id"],
+        "file_size": None,
         "mime_type": file.content_type,
         "alt_text": alt_text,
         "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow()
+        "updated_at": datetime.utcnow(),
     }
-    
+
     result = db.images.insert_one(image_data)
     return str(result.inserted_id)
 
@@ -154,19 +133,15 @@ def get_image_by_id(db: Database, image_id: str) -> Optional[dict]:
     return image
 
 def delete_image(db: Database, image_id: str) -> bool:
-    """Delete image from album and storage"""
+    """Delete image from album and Cloudinary."""
     image = db.images.find_one({"_id": ObjectId(image_id)})
     if not image:
         return False
-    
-    # Delete file from storage
-    try:
-        if os.path.exists(image["file_path"]):
-            os.remove(image["file_path"])
-    except Exception as e:
-        print(f"Error deleting file {image['file_path']}: {e}")
-    
-    # Delete image record from database
+
+    public_id = image.get("public_id")
+    if public_id:
+        cloudinary_service.delete_by_public_id(public_id)
+
     result = db.images.delete_one({"_id": ObjectId(image_id)})
     return result.deleted_count > 0
 

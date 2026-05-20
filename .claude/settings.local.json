@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s http://localhost:8000/openapi.json)",
+      "Bash(python3 -c \"import sys, json; data=json.load\\(sys.stdin\\); paths=[p for p in data['paths'] if 'admission' in p.lower\\(\\)]; print\\('\\\\n'.join\\(paths\\)\\)\")"
+    ]
+  }
+}
