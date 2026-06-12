@@ -1,6 +1,7 @@
 from pymongo.database import Database
 from app.schemas.faculty import FacultyCreate
 from bson import ObjectId
+from bson.errors import InvalidId
 from fastapi import UploadFile
 import shutil
 import os
@@ -23,6 +24,13 @@ def save_upload_file(upload_file: UploadFile, destination: str) -> str:
     finally:
         upload_file.file.close()
     return destination
+
+def _to_object_id(value: str) -> Optional[ObjectId]:
+    """Parse a Mongo id, returning None for malformed values (e.g. 'undefined')."""
+    try:
+        return ObjectId(value)
+    except (InvalidId, TypeError):
+        return None
 
 def generate_unique_filename(original_filename: str) -> str:
     """Generate a unique filename to prevent conflicts"""
@@ -61,11 +69,14 @@ def create_new_faculty(db: Database, faculty: FacultyCreate, profile_image: Opti
     return str(result.inserted_id)
 
 def update_faculty_by_id(db: Database, faculty_id: str, faculty: FacultyCreate, profile_image: Optional[UploadFile] = None):
+    oid = _to_object_id(faculty_id)
+    if oid is None:
+        return False
     faculty_dict = faculty.dict(exclude_unset=True)
 
     if profile_image:
         # Delete the old image before saving the new one
-        old_faculty = db.faculties.find_one({"_id": ObjectId(faculty_id)})
+        old_faculty = db.faculties.find_one({"_id": oid})
         if old_faculty and old_faculty.get("profile_image_url"):
             # Construct file system path from web path
             old_image_path = old_faculty["profile_image_url"].replace("/media/", f"{MEDIA_DIR}/", 1)
@@ -81,17 +92,20 @@ def update_faculty_by_id(db: Database, faculty_id: str, faculty: FacultyCreate, 
         faculty_dict["profile_image_url"] = f"/media/faculty/{unique_filename}"
     
     result = db.faculties.update_one(
-        {"_id": ObjectId(faculty_id)}, {"$set": faculty_dict}
+        {"_id": oid}, {"$set": faculty_dict}
     )
     return result.modified_count > 0
 
 def delete_faculty_by_id(db: Database, faculty_id: str):
+    oid = _to_object_id(faculty_id)
+    if oid is None:
+        return False
     # Also delete the associated image file
-    faculty = db.faculties.find_one({"_id": ObjectId(faculty_id)})
+    faculty = db.faculties.find_one({"_id": oid})
     if faculty and faculty.get("profile_image_url"):
         image_path = faculty["profile_image_url"].replace("/media/", f"{MEDIA_DIR}/", 1)
         if os.path.exists(image_path):
             os.remove(image_path)
-            
-    result = db.faculties.delete_one({"_id": ObjectId(faculty_id)})
+
+    result = db.faculties.delete_one({"_id": oid})
     return result.deleted_count > 0 

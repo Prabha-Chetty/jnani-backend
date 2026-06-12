@@ -1,12 +1,42 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.schemas.user import AdminLogin
 from app.schemas.token import Token
-from app.services.auth import create_access_token, authenticate_user, get_current_user
+from app.services.auth import create_access_token, authenticate_user, get_current_user, is_admin
 from app.db.database import get_database
 from pymongo.database import Database
 from datetime import timedelta
+from bson import ObjectId
+from bson.errors import InvalidId
 
 router = APIRouter()
+
+
+@router.get("/me")
+async def read_current_user(
+    current_user: dict = Depends(get_current_user),
+    db: Database = Depends(get_database),
+):
+    """Return the profile of the logged-in user, including their linked
+    faculty (if any) and admin flag. Used by the frontend for role-gating."""
+    faculty_id = current_user.get("faculty_id")
+    faculty_name = None
+    if faculty_id:
+        try:
+            faculty = db.faculties.find_one({"_id": ObjectId(faculty_id)})
+            if faculty:
+                faculty_name = faculty.get("name")
+        except (InvalidId, TypeError):
+            faculty_name = None
+
+    return {
+        "id": str(current_user["_id"]),
+        "name": current_user.get("name"),
+        "email": current_user.get("email"),
+        "roles": current_user.get("roles", []),
+        "faculty_id": faculty_id,
+        "faculty_name": faculty_name,
+        "is_admin": is_admin(current_user),
+    }
 
 @router.post("/login", response_model=Token)
 async def login_for_access_token(

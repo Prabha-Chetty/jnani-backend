@@ -27,6 +27,10 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
+def is_admin(user: dict) -> bool:
+    """A user is an admin if they carry the 'admin' role."""
+    return "admin" in (user.get("roles") or [])
+
 def authenticate_user(db: Database, email: str, password: str):
     from app.services import user_service
     user = user_service.get_user_by_email(db, email)
