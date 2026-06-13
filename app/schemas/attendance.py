@@ -26,7 +26,6 @@ class Attendance(BaseModel):
     date: str
     day: str
     minutes_taken: int
-    classes: int
     amount: float
     notes: Optional[str] = None
     marked_by: Optional[str] = None
@@ -40,6 +39,5 @@ class AttendanceSummaryRow(BaseModel):
     faculty_id: str
     faculty_name: Optional[str] = None
     total_minutes: int
-    total_classes: int
     total_amount: float
     days: int

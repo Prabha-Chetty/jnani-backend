@@ -27,16 +27,9 @@ def _to_object_id(value: str) -> ObjectId:
         raise HTTPException(status_code=400, detail="Invalid id.")
 
 
-def _classes_and_amount(minutes: int) -> tuple[int, float]:
-    """Whole completed classes in `minutes`, and the amount payable.
-
-    A class is settings.CLASS_LENGTH_MINUTES long; only fully completed classes
-    are remunerated (leftover minutes are not paid).
-    """
-    class_len = settings.CLASS_LENGTH_MINUTES
-    classes = int(minutes) // class_len if class_len > 0 else 0
-    amount = round(classes * settings.RATE_PER_CLASS, 2)
-    return classes, amount
+def _amount_for_day() -> float:
+    """Flat amount payable for a day attended, regardless of minutes taught."""
+    return round(settings.RATE_PER_DAY, 2)
 
 
 def _faculty_name(db: Database, faculty_id: str, cache: dict) -> Optional[str]:
@@ -56,9 +49,7 @@ def _faculty_name(db: Database, faculty_id: str, cache: dict) -> Optional[str]:
 def _serialize(db: Database, doc: dict, cache: dict) -> dict:
     doc["id"] = str(doc["_id"])
     doc["faculty_name"] = _faculty_name(db, doc.get("faculty_id"), cache)
-    classes, amount = _classes_and_amount(doc.get("minutes_taken", 0))
-    doc["classes"] = classes
-    doc["amount"] = amount
+    doc["amount"] = _amount_for_day()
     return doc
 
 
@@ -115,23 +106,15 @@ def list_attendance(
 
 
 def summary(db: Database, month: Optional[int] = None, year: Optional[int] = None):
-    class_len = settings.CLASS_LENGTH_MINUTES
     pipeline = []
     date_q = _date_query(month, year)
     if date_q:
         pipeline.append({"$match": {"date": date_q}})
-    # Classes are floored per-entry (per day), then summed — paying only for
-    # whole classes taught each day.
     pipeline.append(
         {
             "$group": {
                 "_id": "$faculty_id",
                 "total_minutes": {"$sum": "$minutes_taken"},
-                "total_classes": {
-                    "$sum": {
-                        "$floor": {"$divide": ["$minutes_taken", class_len]}
-                    }
-                },
                 "days": {"$sum": 1},
             }
         }
@@ -142,15 +125,15 @@ def summary(db: Database, month: Optional[int] = None, year: Optional[int] = Non
     result = []
     for r in rows:
         fid = r["_id"]
-        total_classes = int(r.get("total_classes", 0))
+        days = r.get("days", 0)
+        # Flat amount per day attended.
         result.append(
             {
                 "faculty_id": fid,
                 "faculty_name": _faculty_name(db, fid, cache),
                 "total_minutes": int(r.get("total_minutes", 0)),
-                "total_classes": total_classes,
-                "total_amount": round(total_classes * settings.RATE_PER_CLASS, 2),
-                "days": r.get("days", 0),
+                "total_amount": round(days * settings.RATE_PER_DAY, 2),
+                "days": days,
             }
         )
     result.sort(key=lambda x: (x["faculty_name"] or "").lower())
