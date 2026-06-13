@@ -24,8 +24,7 @@ def _require_admin(current_user: dict):
 async def attendance_config(current_user: dict = Depends(get_current_user)):
     """Remuneration config used by the UI to preview/compute amounts."""
     return {
-        "class_length_minutes": settings.CLASS_LENGTH_MINUTES,
-        "rate_per_class": settings.RATE_PER_CLASS,
+        "rate_per_day": settings.RATE_PER_DAY,
     }
 
 
@@ -65,7 +64,7 @@ async def attendance_summary(
     db: Database = Depends(get_database),
     current_user: dict = Depends(get_current_user),
 ):
-    """Admin: total minutes, classes, amount and days per faculty for the period."""
+    """Admin: total minutes, amount and days per faculty for the period."""
     _require_admin(current_user)
     return attendance_service.summary(db, month=month, year=year)
 
