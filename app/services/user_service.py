@@ -52,4 +52,4 @@ def create_default_admin(db: Database):
                 "description": "Administrator with all permissions",
                 "permissions": ["*"] # Wildcard for all permissions
             })
-            print("Default admin role created.") 
+            print("Default admin role created.")

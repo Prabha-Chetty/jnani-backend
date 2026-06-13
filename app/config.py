@@ -12,6 +12,12 @@ class Settings(BaseSettings):
     MEDIA_URL: str = os.getenv("MEDIA_URL", "http://localhost:8000")
     CLOUDINARY_URL: str = os.getenv("CLOUDINARY_URL", "")
 
+    # Attendance remuneration. A "class" is CLASS_LENGTH_MINUTES long and each
+    # completed class earns RATE_PER_CLASS. Faculty attendance is collected in
+    # whole minutes; amount = floor(minutes / class_length) * rate_per_class.
+    CLASS_LENGTH_MINUTES: int = int(os.getenv("CLASS_LENGTH_MINUTES", "45"))
+    RATE_PER_CLASS: float = float(os.getenv("RATE_PER_CLASS", "100"))
+
     class Config:
         env_file = ".env"
         extra = "ignore"

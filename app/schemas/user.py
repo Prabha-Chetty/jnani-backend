@@ -7,6 +7,7 @@ class UserBase(BaseModel):
     email: EmailStr
     is_active: bool = True
     roles: List[str] = []
+    faculty_id: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8)
@@ -17,6 +18,7 @@ class UserUpdate(BaseModel):
     is_active: Optional[bool] = None
     roles: Optional[List[str]] = None
     password: Optional[str] = None
+    faculty_id: Optional[str] = None
 
 class User(UserBase):
     id: PyObjectId = Field(..., alias="_id")
