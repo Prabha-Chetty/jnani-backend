@@ -12,9 +12,11 @@ class Settings(BaseSettings):
     MEDIA_URL: str = os.getenv("MEDIA_URL", "http://localhost:8000")
     CLOUDINARY_URL: str = os.getenv("CLOUDINARY_URL", "")
 
-    # Faculty remuneration. A flat amount is paid per day attended, regardless
-    # of how many minutes were taught. Time is still recorded in minutes.
-    RATE_PER_DAY: float = float(os.getenv("RATE_PER_DAY", "500"))
+    # Faculty remuneration. Pay is per class taught: a fixed rate for each
+    # class of a fixed length. Time is recorded in minutes and the amount is
+    # prorated by minutes taught (minutes / CLASS_MINUTES * RATE_PER_CLASS).
+    RATE_PER_CLASS: float = float(os.getenv("RATE_PER_CLASS", "250"))
+    CLASS_MINUTES: int = int(os.getenv("CLASS_MINUTES", "45"))
 
     class Config:
         env_file = ".env"

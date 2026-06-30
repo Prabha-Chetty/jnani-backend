@@ -27,9 +27,15 @@ def _to_object_id(value: str) -> ObjectId:
         raise HTTPException(status_code=400, detail="Invalid id.")
 
 
-def _amount_for_day() -> float:
-    """Flat amount payable for a day attended, regardless of minutes taught."""
-    return round(settings.RATE_PER_DAY, 2)
+def _amount_for_minutes(minutes: int) -> float:
+    """Amount payable for the minutes taught, by whole completed classes.
+
+    A class is `CLASS_MINUTES` long and pays `RATE_PER_CLASS`. Only fully
+    completed classes are paid; e.g. with the defaults (45 min / Rs.250) a
+    90-minute session pays Rs.500 and a 60-minute session pays Rs.250.
+    """
+    classes = (minutes or 0) // settings.CLASS_MINUTES
+    return round(classes * settings.RATE_PER_CLASS, 2)
 
 
 def _faculty_name(db: Database, faculty_id: str, cache: dict) -> Optional[str]:
@@ -49,7 +55,7 @@ def _faculty_name(db: Database, faculty_id: str, cache: dict) -> Optional[str]:
 def _serialize(db: Database, doc: dict, cache: dict) -> dict:
     doc["id"] = str(doc["_id"])
     doc["faculty_name"] = _faculty_name(db, doc.get("faculty_id"), cache)
-    doc["amount"] = _amount_for_day()
+    doc["amount"] = _amount_for_minutes(doc.get("minutes_taken", 0))
     return doc
 
 
@@ -115,6 +121,15 @@ def summary(db: Database, month: Optional[int] = None, year: Optional[int] = Non
             "$group": {
                 "_id": "$faculty_id",
                 "total_minutes": {"$sum": "$minutes_taken"},
+                # Whole completed classes per entry, summed across the period —
+                # matches the per-day amounts shown on the calendar.
+                "total_classes": {
+                    "$sum": {
+                        "$floor": {
+                            "$divide": ["$minutes_taken", settings.CLASS_MINUTES]
+                        }
+                    }
+                },
                 "days": {"$sum": 1},
             }
         }
@@ -126,13 +141,14 @@ def summary(db: Database, month: Optional[int] = None, year: Optional[int] = Non
     for r in rows:
         fid = r["_id"]
         days = r.get("days", 0)
-        # Flat amount per day attended.
+        total_minutes = int(r.get("total_minutes", 0))
+        total_classes = int(r.get("total_classes", 0))
         result.append(
             {
                 "faculty_id": fid,
                 "faculty_name": _faculty_name(db, fid, cache),
-                "total_minutes": int(r.get("total_minutes", 0)),
-                "total_amount": round(days * settings.RATE_PER_DAY, 2),
+                "total_minutes": total_minutes,
+                "total_amount": round(total_classes * settings.RATE_PER_CLASS, 2),
                 "days": days,
             }
         )

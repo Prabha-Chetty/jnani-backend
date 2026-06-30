@@ -24,7 +24,8 @@ def _require_admin(current_user: dict):
 async def attendance_config(current_user: dict = Depends(get_current_user)):
     """Remuneration config used by the UI to preview/compute amounts."""
     return {
-        "rate_per_day": settings.RATE_PER_DAY,
+        "rate_per_class": settings.RATE_PER_CLASS,
+        "class_minutes": settings.CLASS_MINUTES,
     }
 
 

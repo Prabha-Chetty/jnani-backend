@@ -1,7 +1,6 @@
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from app.config import settings
-import ssl
 import os
 
 # Initialize db as None
@@ -36,8 +35,8 @@ def initialize_database():
             base_url = mongodb_url.split('?')[0]
             client = MongoClient(
                 base_url,
-                ssl=True,
-                ssl_cert_reqs=ssl.CERT_NONE,
+                tls=True,
+                tlsAllowInvalidCertificates=True,
                 serverSelectionTimeoutMS=10000,
                 connectTimeoutMS=10000,
                 socketTimeoutMS=10000
