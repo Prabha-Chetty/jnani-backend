@@ -9,6 +9,10 @@ class FacultyBase(BaseModel):
     experience: int = Field(..., gt=0)
     profile_image_url: Optional[str] = None
     image_url: Optional[str] = None
+    # Per-faculty attendance remuneration overrides. When either is unset the
+    # global defaults (settings.RATE_PER_CLASS / settings.CLASS_MINUTES) apply.
+    rate_per_class: Optional[float] = Field(None, gt=0)
+    class_minutes: Optional[int] = Field(None, gt=0, le=1440)
 
 class FacultyCreate(FacultyBase):
     pass

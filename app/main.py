@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.routes import auth, students, courses, faculty, users, roles, permissions, events, library, classes, gallery, admissions, attendance, student_attendance
+from app.routes import auth, students, courses, faculty, users, roles, permissions, events, library, classes, gallery, admissions, attendance, student_attendance,products
 from app.routes import content as content_routes
 from app.routes import contact_enquiry as contact_enquiry_routes
 from app.db.database import get_database
@@ -74,6 +74,8 @@ app.include_router(contact_enquiry_routes.admin_router, prefix="/admin/contact-e
 app.include_router(admissions.router, prefix="/admin/admissions", tags=["Admissions"])
 app.include_router(attendance.router, prefix="/admin/attendance", tags=["Attendance"])
 app.include_router(student_attendance.router, prefix="/admin/student-attendance", tags=["Student Attendance"])
+
+app.include_router(products.router, prefix="/products", tags=["Products"])
 
 @app.get("/")
 async def root():

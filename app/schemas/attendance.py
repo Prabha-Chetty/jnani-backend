@@ -27,6 +27,9 @@ class Attendance(BaseModel):
     day: str
     minutes_taken: int
     amount: float
+    # Rate frozen onto this entry at save time (Option B).
+    rate_per_class: Optional[float] = None
+    class_minutes: Optional[int] = None
     notes: Optional[str] = None
     marked_by: Optional[str] = None
 
