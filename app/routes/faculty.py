@@ -26,6 +26,8 @@ async def create_faculty(
     subject: str = Form(...),
     qualification: str = Form(...),
     experience: int = Form(...),
+    rate_per_class: Optional[float] = Form(None),
+    class_minutes: Optional[int] = Form(None),
     profile_image: Optional[UploadFile] = File(None),
     db: Database = Depends(get_database),
     current_user: dict = Depends(get_current_user)
@@ -34,7 +36,9 @@ async def create_faculty(
         name=name,
         subject=subject,
         qualification=qualification,
-        experience=experience
+        experience=experience,
+        rate_per_class=rate_per_class,
+        class_minutes=class_minutes,
     )
     faculty_id = create_new_faculty(db, faculty_create, profile_image)
     return {"message": "Faculty created successfully", "id": faculty_id}
@@ -46,6 +50,8 @@ async def update_faculty(
     subject: str = Form(...),
     qualification: str = Form(...),
     experience: int = Form(...),
+    rate_per_class: Optional[float] = Form(None),
+    class_minutes: Optional[int] = Form(None),
     profile_image: Optional[UploadFile] = File(None),
     db: Database = Depends(get_database),
     current_user: dict = Depends(get_current_user)
@@ -55,6 +61,8 @@ async def update_faculty(
         subject=subject,
         qualification=qualification,
         experience=experience,
+        rate_per_class=rate_per_class,
+        class_minutes=class_minutes,
     )
     if not update_faculty_by_id(db, faculty_id, faculty_update, profile_image):
         raise HTTPException(status_code=404, detail="Faculty not found")
